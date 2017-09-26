@@ -11,8 +11,8 @@ const setBuildStatus = ({
   files,
   globalMessage,
   fail,
-  currentEvent,
-  currentBranch
+  event: currentEvent,
+  branch: currentBranch
 }) => {
   if (fail) build.fail(globalMessage || 'bundle size > maxSize', url)
   else {
@@ -32,8 +32,8 @@ const compare = (files, masterValues = {}) => {
   let globalMessage
 
   files.map(file => {
-    const { path, size, master, maxSize } = file
     file.master = masterValues[file.path]
+    const { path, size, master, maxSize } = file
 
     let message = `${path}: ${bytes(size)} `
     const prettySize = bytes(maxSize)
@@ -74,7 +74,7 @@ const compare = (files, masterValues = {}) => {
   const params = encodeURIComponent(
     JSON.stringify({ files, repo, branch, commit_message, sha })
   )
-  let url = `https://bundlesize-store.now.sh/build?info=${params}`
+  let url = `https://qb-bundle-size.now.sh/build?info=${params}`
 
   debug('url before shortening', url)
 

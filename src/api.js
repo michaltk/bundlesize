@@ -3,10 +3,11 @@ let { repo } = require('ci-env')
 const { sha, ci } = require('ci-env')
 const { warn } = require('prettycli')
 
-const token = require('./token')
+// const token = require('./token')
+const token = 'token'
 const debug = require('./debug')
 
-const url = 'https://bundlesize-store.now.sh/values'
+const url = 'https://qb-bundle-size.now.sh/values'
 
 let enabled = false
 
