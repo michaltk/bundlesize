@@ -10,32 +10,35 @@ firebase.initializeApp({ apiKey, databaseURL })
 
 const database = firebase.database()
 
-// const authenticate = token => {
-//   const credential = firebase.auth.GithubAuthProvider.credential(token)
-//   return firebase
-//     .auth()
-//     .signInWithCredential(credential)
-//     .catch(error => console.log(error))
-// }
+const authenticate = token => {
+  return firebase
+    .auth()
+    .signInWithEmailAndPassword(
+      process.env.FIREBASE_EMAIL,
+      process.env.FIREBASE_PW
+    )
+    .catch(error => console.log(error))
+}
 
 const logout = () => firebase.auth().signOut()
 
-const set = (repo, values, sha, token) => {
-  // authenticate(token)
-  database
+const set = async (repo, values, sha, token) => {
+  await authenticate()
+  await database
     .ref(repo)
     .child(sha)
     .set(values)
   logout()
 }
 const get = async (repo, token) => {
-  //  authenticate(token)
+  await authenticate()
   const snapshot = await database
     .ref(repo)
     .limitToLast(1)
     .once('value')
 
   const object = snapshot.val()
+  logout()
   if (!object) return []
   return Object.values(object)[0]
 }
