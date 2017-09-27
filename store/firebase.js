@@ -24,10 +24,8 @@ const logout = () => firebase.auth().signOut()
 
 const set = async (repo, values, sha, token) => {
   await authenticate()
-  await database
-    .ref(repo)
-    .child(sha)
-    .set(values)
+  values[0].sha = sha
+  await database.ref(repo).push(values)
   logout()
 }
 const get = async (repo, token) => {
@@ -36,7 +34,6 @@ const get = async (repo, token) => {
     .ref(repo)
     .limitToLast(1)
     .once('value')
-
   const object = snapshot.val()
   logout()
   if (!object) return []
