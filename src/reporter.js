@@ -1,5 +1,5 @@
 const bytes = require('bytes')
-const { error, warn, info } = require('prettycli')
+const { warn, info } = require('prettycli')
 const { event, repo, branch, commit_message, sha } = require('ci-env')
 const build = require('./build')
 const api = require('./api')
@@ -10,61 +10,67 @@ const setBuildStatus = ({
   url,
   files,
   globalMessage,
-  fail,
+  warnMsg,
   event: currentEvent,
   branch: currentBranch
 }) => {
-  if (fail) build.fail(globalMessage || 'bundle size > maxSize', url)
-  else {
-    if (currentEvent === 'push' && currentBranch === 'master') {
-      const values = []
-      files.map(file => values.push({ path: file.path, size: file.size }))
-      api.set(values)
-    }
-    build.pass(globalMessage || 'Good job! bundle size < maxSize', url)
+  const message = warnMsg
+    ? 'bundle size larger than master, careful!'
+    : 'Good job! bundle size < master'
+  // if (fail) build.fail(globalMessage || 'bundle size > maxSize', url)
+  // else {
+  if (currentEvent === 'push' && currentBranch === 'master') {
+    const values = []
+    files.map(file => values.push({ path: file.path, size: file.size }))
+    api.set(values)
   }
+  build.pass(globalMessage || message, url)
+  // }
 
   debug('global message', globalMessage)
 }
 
 const compare = (files, masterValues = {}) => {
-  let fail = false
+  let warnMsg = false
   let globalMessage
 
   files.map(file => {
     file.master = masterValues[file.path]
-    const { path, size, master, maxSize } = file
-
+    const { path, size, master } = file
     let message = `${path}: ${bytes(size)} `
-    const prettySize = bytes(maxSize)
+    const diff = size - master
     /*
       if size > maxSize, fail
       else if size > master, warn + pass
       else yay + pass
     */
 
-    if (size > maxSize) {
-      fail = true
-      if (prettySize) message += `> maxSize ${prettySize} gzip`
-      error(message, { fail: false, label: 'FAIL' })
-    } else if (!master) {
-      if (prettySize) message += `< maxSize ${prettySize} gzip`
-      info('PASS', message)
-    } else {
-      if (prettySize) message += `< maxSize ${prettySize} gzip `
-      const diff = size - master
+    // if (size > maxSize) {
+    //   fail = true
+    //   if (prettySize) message += `> maxSize ${prettySize} gzip`
+    //   error(message, { fail: false, label: 'FAIL' })
+    // } else if (!master) {
+    //   if (prettySize) message += `< maxSize ${prettySize} gzip`
+    //   info('PASS', message)
+    // } else {
+    // if (prettySize) message += `< maxSize ${prettySize} gzip `
+    // const diff = size - master
 
-      if (diff < 0) {
-        message += `(${bytes(Math.abs(diff))} smaller than master, good job!)`
-        info('PASS', message)
-      } else if (diff > 0) {
-        message += `(${bytes(diff)} larger than master, careful!)`
-        warn(message)
-      } else {
-        message += '(same as master)'
-        info('PASS', message)
-      }
+    if (!master) {
+      message += '(no master to compare)'
+      info('PASS', message)
+    } else if (diff < 0) {
+      message += `(${bytes(Math.abs(diff))} smaller than master, good job!)`
+      info('PASS', message)
+    } else if (diff > 0) {
+      message += `(${bytes(diff)} larger than master, careful!)`
+      warnMsg = true
+      warn(message)
+    } else {
+      message += '(same as master)'
+      info('PASS', message)
     }
+    // }
 
     if (files.length === 1) globalMessage = message
     return debug('message', message)
@@ -83,11 +89,11 @@ const compare = (files, masterValues = {}) => {
     .then(res => {
       url = res.data.id
       debug('url after shortening', url)
-      setBuildStatus({ url, files, globalMessage, fail, event, branch })
+      setBuildStatus({ url, files, globalMessage, warnMsg, event, branch })
     })
     .catch(err => {
       debug('err while shortening', err)
-      setBuildStatus({ url, files, globalMessage, fail, event, branch })
+      setBuildStatus({ url, files, globalMessage, warnMsg, event, branch })
     })
 }
 
