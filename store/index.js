@@ -16,11 +16,11 @@ server.get('/status', (req, res) => {
 })
 
 server.get('/values', async (req, res) => {
-  const { repo, token } = req.query
+  const { repo, token, sha } = req.query
   if (!repo) res.status(400).end('repo missing')
   else {
     // else if (!token) res.status(401).end('token missing')
-    const response = await get(repo, token)
+    const response = await get(repo, token, sha)
     res.end(JSON.stringify(response))
   }
 })

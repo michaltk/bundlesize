@@ -28,16 +28,15 @@ const set = async (repo, values, sha, token) => {
   await database.ref(repo).push(values)
   logout()
 }
-const get = async (repo, token) => {
+const get = async (repo, token, sha) => {
   await authenticate()
-  const snapshot = await database
-    .ref(repo)
-    .limitToLast(1)
-    .once('value')
+  const snapshot = await database.ref(repo).once('value')
   const object = snapshot.val()
   logout()
-  if (!object) return []
-  return Object.values(object)[0]
+  if (!sha) return Object.values(object).pop()
+  const value = Object.values(object).find(result => result[0].sha === sha)
+  if (!value) return []
+  return value
 }
 
 module.exports = { set, get }
